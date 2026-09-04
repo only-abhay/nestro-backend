@@ -26,8 +26,8 @@ const server = http.createServer(app);
 // Allowed Frontend Origins
 // ------------------------------------
 const allowedOrigins = (
-  process.env.FRONTEND_URL ||
-  "http://localhost:3000,https://nestro-frontend-nmcr.vercel.app"
+  "http://localhost:3000",
+  "https://nestro-frontend-nmcr.vercel.app"
 )
   .split(",")
   .map((origin) => origin.trim().replace(/\/$/, ""))
