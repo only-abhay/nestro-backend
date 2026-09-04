@@ -190,6 +190,7 @@ const GetProfile = async (req, res) => {
 
 const Logout = async (req, res) => {
   try {
+    console.log()
     res.clearCookie("jwt", {
       httpOnly: true,
       secure: false,
