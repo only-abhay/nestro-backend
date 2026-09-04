@@ -84,7 +84,7 @@ const createOrder = async (req, res) => {
     }
 
     // ================= ONLINE PAYMENT =================
-
+     console.log(total_amount)
     const options = {
       amount: total_amount * 100,
       currency: "INR",
@@ -97,11 +97,12 @@ const createOrder = async (req, res) => {
     await newOrder.save();
 
     return res.status(200).json({
-      success: true,
-      message: "Order created successfully.",
-      order_id: newOrder._id,
-      razorpay_order_id: razorpayOrder.id,
-    });
+  success: true,
+  message: "Order created successfully.",
+  order_id: newOrder._id,
+  razorpay_order_id: razorpayOrder.id,
+  amount: total_amount,
+});
 
   } catch (error) {
     console.error("Create Order Error:", error);
