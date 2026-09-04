@@ -2,7 +2,6 @@ import Cryptr from "cryptr";
 const cryptr = new Cryptr(process.env.SECRET_KEY_FOR_ENCRPT);
 
 import UserModel from "../models/user.model.js";
-
 import {
   AlreadyExist,
   BadRequest,
@@ -11,30 +10,8 @@ import {
   NotFound,
   Unauthorized,
 } from "../utils/response.js";
-
 import { SendOtpMail } from "../utils/nodemailer.js";
 import { generateToken } from "../utils/helper.js";
-
-
-// =====================================================
-// COOKIE OPTIONS
-// =====================================================
-
-const cookieOptions = {
-  maxAge: 30 * 24 * 60 * 60 * 1000,
-  httpOnly: true,
-
-  // Vercel + Render different domains hain
-  secure: true,
-  sameSite: "none",
-
-  path: "/",
-};
-
-
-// =====================================================
-// REGISTER
-// =====================================================
 
 const Register = async (req, res) => {
   try {
@@ -52,10 +29,7 @@ const Register = async (req, res) => {
 
     const encryptedPass = cryptr.encrypt(password);
 
-    const otp = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
-
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpire = Date.now() + 3 * 60 * 1000;
 
     const mailSent = await SendOtpMail(email, otp);
@@ -73,149 +47,71 @@ const Register = async (req, res) => {
       otpExpire,
     });
 
-    return Created(
-      res,
-      "Registration successful. Please verify OTP."
-    );
-
+    return Created(res, "Registration successful. Please verify OTP.");
   } catch (error) {
-    console.error("Register Error:", error);
-
-    return InternalServerError(
-      res,
-      "Internal Server Error",
-      error
-    );
+    return InternalServerError(res, "Internal Server Error", error);
   }
 };
-
-
-// =====================================================
-// READ USERS
-// =====================================================
-
 const Read = async (req, res) => {
   try {
     const users = await UserModel.find();
 
-    return Created(
-      res,
-      "Users fetched successfully",
-      users
-    );
-
+    return Created(res, "Users fetched successfully", users);
   } catch (error) {
-    return InternalServerError(
-      res,
-      "Internal Server Error",
-      error
-    );
+    return InternalServerError(res, "Internal Server Error", error);
   }
 };
-
-
-// =====================================================
-// LOGIN
-// =====================================================
 
 const Login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return BadRequest(
-        res,
-        "Email and password are required"
-      );
+      return BadRequest(res, "Email and password are required");
     }
 
-    let user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({ email });
 
     if (!user) {
       return NotFound(res, "User not found");
     }
 
     if (!user.isVerified) {
-      return Unauthorized(
-        res,
-        "Please verify your email first"
+      return Unauthorized(res, "Please verify your email first");
+    }
+    if(user.role == "admin"){
+       user = await UserModel.findOneAndUpdate(
+        { email },
+        {  role: "user" },
       );
     }
-
-    // -----------------------------------------------
-    // Password check
-    // -----------------------------------------------
-
     const decryptPass = cryptr.decrypt(user.password);
 
     if (decryptPass !== password) {
-      return Unauthorized(
-        res,
-        "Invalid email or password"
-      );
+      return Unauthorized(res, "Invalid email or password");
     }
-
-    // -----------------------------------------------
-    // Normal user login
-    // -----------------------------------------------
-
-    // Agar admin normal login kare,
-    // usko user bana rahe ho.
-    if (user.role === "admin") {
-      user = await UserModel.findOneAndUpdate(
-        { email },
-        { role: "user" },
-        { new: true }
-      );
-    }
-
-    // -----------------------------------------------
-    // Generate JWT
-    // -----------------------------------------------
 
     const token = generateToken(user);
 
-    // -----------------------------------------------
-    // Set Cookie
-    // -----------------------------------------------
+  res.cookie("jwt", token, {
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+  path: "/",
+});
 
-    res.cookie(
-      "jwt",
-      token,
-      cookieOptions
-    );
-
-    return Created(
-      res,
-      "Login successful",
-      user._id
-    );
-
+    return Created(res, "Login successful", user._id);
   } catch (error) {
-    console.error("Login Error:", error);
-
-    return InternalServerError(
-      res,
-      "Internal Server Error",
-      error
-    );
+    return InternalServerError(res, "Internal Server Error", error);
   }
 };
-
-
-// =====================================================
-// VERIFY OTP
-// =====================================================
-
 const VerifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      return BadRequest(
-        res,
-        "Email and OTP are required"
-      );
+      return BadRequest(res, "Email and OTP are required");
     }
 
     const user = await UserModel.findOne({ email });
@@ -238,27 +134,11 @@ const VerifyOTP = async (req, res) => {
 
     await user.save();
 
-    return Created(
-      res,
-      "OTP verified successfully"
-    );
-
+    return Created(res, "OTP verified successfully");
   } catch (error) {
-    console.error("Verify OTP Error:", error);
-
-    return InternalServerError(
-      res,
-      "Internal Server Error",
-      error
-    );
+    return InternalServerError(res, "Internal Server Error", error);
   }
 };
-
-
-// =====================================================
-// DELETE USER
-// =====================================================
-
 const deletebyId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -271,32 +151,16 @@ const deletebyId = async (req, res) => {
 
     await UserModel.findByIdAndDelete(id);
 
-    return Created(
-      res,
-      "User deleted successfully"
-    );
-
+    return Created(res, "User deleted successfully");
   } catch (error) {
-    console.error("Delete User Error:", error);
-
-    return InternalServerError(
-      res,
-      "Internal Server Error",
-      error
-    );
+    return InternalServerError(res, "Internal Server Error", error);
   }
 };
-
-
-// =====================================================
-// GET PROFILE
-// =====================================================
 
 const GetProfile = async (req, res) => {
   try {
     const user = req.user;
-
-    console.log("Get Profile User:", user);
+    console.log(user)
 
     if (!user) {
       return res.status(401).json({
@@ -319,26 +183,14 @@ const GetProfile = async (req, res) => {
       success: true,
       user,
     });
-
   } catch (error) {
-    console.error("Get Profile Error:", error);
-
-    return InternalServerError(
-      res,
-      "Internal Server Error",
-      error
-    );
+    console.log(error);
+    return InternalServerError(res, "Internal Server Error", error);
   }
 };
 
-
-// =====================================================
-// LOGOUT
-// =====================================================
-
 const Logout = async (req, res) => {
   try {
-
     res.clearCookie("jwt", {
       httpOnly: true,
       secure: true,
@@ -350,110 +202,68 @@ const Logout = async (req, res) => {
       success: true,
       message: "Logout successful",
     });
-
   } catch (error) {
-    console.error("Logout Error:", error);
-
     return res.status(500).json({
       success: false,
-      message: "Logout failed",
+      message: error.message,
     });
   }
 };
 
-
-// =====================================================
-// ADMIN LOGIN
-// =====================================================
-
 const adminLogin = async (req, res) => {
   try {
-    const {
-      email,
-      password,
-      loginAsAdmin,
-    } = req.body;
+    const { email, password, loginAsAdmin } = req.body;
 
     if (!email || !password) {
-      return BadRequest(
-        res,
-        "Email and password are required"
-      );
+      return BadRequest(res, "Email and password are required");
     }
 
+    // Find user
     let user = await UserModel.findOne({ email });
 
     if (!user) {
       return NotFound(res, "User not found");
     }
 
-    // -----------------------------------------------
     // Password check
-    // -----------------------------------------------
-
     const decryptPass = cryptr.decrypt(user.password);
 
     if (decryptPass !== password) {
-      return Unauthorized(
-        res,
-        "Invalid email or password"
-      );
+      return Unauthorized(res, "Invalid email or password");
     }
 
-    // -----------------------------------------------
     // Admin login selected
-    // -----------------------------------------------
-
-    if (loginAsAdmin === true) {
-
+    if (loginAsAdmin == true) {
       user = await UserModel.findOneAndUpdate(
         { email },
-        { role: "admin" },
-        { new: true }
+        {  role: "admin" },
       );
 
       if (!user) {
         return NotFound(res, "User not found");
       }
     }
-
-    // -----------------------------------------------
     // Admin check
-    // -----------------------------------------------
-
     if (user.role !== "admin") {
-      return Unauthorized(
-        res,
-        "Only Admin can login"
-      );
+      return Unauthorized(res, "Only Admin can login");
     }
 
-    // -----------------------------------------------
-    // Generate token
-    // -----------------------------------------------
-
+    // Generate token with updated user
     const token = generateToken(user);
 
-    // -----------------------------------------------
-    // Set admin cookie
-    // -----------------------------------------------
+    // Set cookie
+    res.cookie("jwt", token, {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      path: "/",
+    });
 
-    res.cookie(
-      "jwt",
-      token,
-      cookieOptions
-    );
-
-    return Created(
-      res,
-      "Admin Login successful"
-    );
+    return Created(res, "Admin Login successful");
 
   } catch (error) {
-    console.error(
-      "Admin Login Error:",
-      error
-    );
+    console.error("Admin Login Error:", error);
 
     return InternalServerError(
       res,
@@ -463,10 +273,6 @@ const adminLogin = async (req, res) => {
   }
 };
 
-
-// =====================================================
-// ADD ADDRESS
-// =====================================================
 
 const AddAddress = async (req, res) => {
   try {
@@ -484,21 +290,15 @@ const AddAddress = async (req, res) => {
 
     const user = req.user;
 
-    if (
-      !fullName ||
-      !phone ||
-      !addressLine ||
-      !city ||
-      !state ||
-      !pincode
-    ) {
+    if (!fullName || !phone || !addressLine || !city || !state || !pincode) {
       return res.status(400).json({
         success: false,
-        message:
-          "All required fields are mandatory.",
+        message: "All required fields are mandatory.",
       });
     }
 
+    // If new address is default,
+    // remove default from all previous addresses.
     if (isDefault) {
       user.addresses.forEach((address) => {
         address.isDefault = false;
@@ -524,9 +324,8 @@ const AddAddress = async (req, res) => {
       message: "Address added successfully.",
       addresses: user.addresses,
     });
-
   } catch (error) {
-    console.error("Add Address Error:", error);
+    console.log(error);
 
     return res.status(500).json({
       success: false,
@@ -535,100 +334,45 @@ const AddAddress = async (req, res) => {
   }
 };
 
-
-// =====================================================
-// RESEND OTP
-// =====================================================
-
 const ResendOTP = async (req, res) => {
   try {
     return Created(res, "Data Created");
-
   } catch (error) {
-    return InternalServerError(
-      res,
-      "internal Server Error",
-      error
-    );
+    return InternalServerError(res, "internal Server Error", error);
   }
 };
-
-
-// =====================================================
-// FORGOT PASSWORD
-// =====================================================
 
 const ForgotPassword = async (req, res) => {
   try {
     return Created(res, "Data Created");
-
   } catch (error) {
-    return InternalServerError(
-      res,
-      "internal Server Error",
-      error
-    );
+    return InternalServerError(res, "internal Server Error", error);
   }
 };
-
-
-// =====================================================
-// RESET PASSWORD
-// =====================================================
 
 const ResetPassword = async (req, res) => {
   try {
     return Created(res, "Data Created");
-
   } catch (error) {
-    return InternalServerError(
-      res,
-      "internal Server Error",
-      error
-    );
+    return InternalServerError(res, "internal Server Error", error);
   }
 };
-
-
-// =====================================================
-// UPDATE ADDRESS
-// =====================================================
 
 const UpdateAddress = async (req, res) => {
   try {
     return Created(res, "Data Created");
-
   } catch (error) {
-    return InternalServerError(
-      res,
-      "internal Server Error",
-      error
-    );
+    return InternalServerError(res, "internal Server Error", error);
   }
 };
-
-
-// =====================================================
-// DELETE ADDRESS
-// =====================================================
 
 const DeleteAddress = async (req, res) => {
   try {
     return Created(res, "Data Created");
-
   } catch (error) {
-    return InternalServerError(
-      res,
-      "internal Server Error",
-      error
-    );
+    return InternalServerError(res, "internal Server Error", error);
   }
 };
-
-
-// =====================================================
-// EXPORT
-// =====================================================
 
 export {
   Register,
