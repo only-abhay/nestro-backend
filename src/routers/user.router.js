@@ -28,7 +28,7 @@ UserRouter.post("/login", Login);
 UserRouter.post("/adminlogin", adminLogin);
 UserRouter.delete("/delete/:id", deletebyId);
 UserRouter.get("/get-me",Protect, GetProfile);
-UserRouter.get("/logout",Protect, Logout);
+UserRouter.get("/logout", Logout);
 UserRouter.post("/verify-otp", VerifyOTP);
 UserRouter.post("/resend-otp", ResendOTP);
 UserRouter.post("/forgot-password", ForgotPassword);
