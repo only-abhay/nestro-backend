@@ -1,50 +1,40 @@
 import "dotenv/config";
-import nodemailer from "nodemailer";
-import dns from "dns";
+import { Resend } from "resend";
 
-dns.setDefaultResultOrder("ipv4first");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function SendOtpMail(toemail, otp) {
   try {
-    const { EMAIL_KEY, APP_PASSKEY } = process.env;
-
-    if (!EMAIL_KEY || !APP_PASSKEY) {
-      throw new Error("EMAIL_KEY or APP_PASSKEY missing");
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is missing");
     }
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      family: 4,
+    console.log("Sending OTP to:", toemail);
 
-      auth: {
-        user: EMAIL_KEY,
-        pass: APP_PASSKEY,
-      },
-
-      connectionTimeout: 40000,
-      greetingTimeout: 40000,
-      socketTimeout: 40000,
-    });
-
-    await transporter.verify();
-
-    console.log("SMTP connection successful");
-
-    await transporter.sendMail({
-      from: `"Nestro" <${EMAIL_KEY}>`,
-      to: toemail,
+    const { data, error } = await resend.emails.send({
+      from: "Nestro <onboarding@resend.dev>",
+      to: [toemail],
       subject: "Nestro - Verify Your Email",
+
       html: `
-        <div style="max-width:600px;margin:auto;font-family:Arial,sans-serif;padding:20px;border:1px solid #e5e5e5;border-radius:10px;">
+        <div style="
+          max-width:600px;
+          margin:auto;
+          font-family:Arial,sans-serif;
+          padding:20px;
+          border:1px solid #e5e5e5;
+          border-radius:10px;
+        ">
+
           <h2 style="color:#8B5E3C;text-align:center;">
             Welcome to Nestro
           </h2>
 
           <p>Hello,</p>
 
-          <p>Your One Time Password (OTP) for verifying your account is:</p>
+          <p>
+            Your One Time Password (OTP) for verifying your account is:
+          </p>
 
           <div style="text-align:center;margin:30px 0;">
             <span style="
@@ -61,31 +51,39 @@ export async function SendOtpMail(toemail, otp) {
             </span>
           </div>
 
-          <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+          <p>
+            This OTP is valid for <strong>10 minutes</strong>.
+          </p>
 
-          <p>If you didn't request this verification, please ignore this email.</p>
+          <p>
+            If you didn't request this verification, please ignore this email.
+          </p>
 
           <hr>
 
-          <p style="text-align:center;color:#777;font-size:12px;">
+          <p style="
+            text-align:center;
+            color:#777;
+            font-size:12px;
+          ">
             © ${new Date().getFullYear()} Nestro. All Rights Reserved.
           </p>
+
         </div>
       `,
     });
 
-    console.log("OTP email sent successfully");
+    if (error) {
+      console.error("Resend Error:", error);
+      return false;
+    }
+
+    console.log("OTP email sent successfully:", data);
 
     return "otp Email Sent Successfully";
 
   } catch (error) {
-    console.error("Email Error:", {
-      message: error.message,
-      code: error.code,
-      responseCode: error.responseCode,
-      command: error.command,
-    });
-
+    console.error("Email Error:", error);
     return false;
   }
 }
