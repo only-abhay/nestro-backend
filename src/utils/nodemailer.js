@@ -1,7 +1,7 @@
 import "dotenv/config";
 import nodemailer from "nodemailer";
 
-export async function SendOtpMail(normalizedEmail, otp) {
+export async function SendOtpMail(toemail, otp) {
   try {
     const { EMAIL_KEY, APP_PASSKEY } = process.env;
 
@@ -11,33 +11,30 @@ export async function SendOtpMail(normalizedEmail, otp) {
       );
     }
 
-    console.log("Email:", EMAIL_KEY);
-    console.log("App Password exists:", !!APP_PASSKEY);
-    console.log("Sending OTP to:", normalizedEmail);
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      family: 4,
+      auth: {
+        user: EMAIL_KEY,
+        pass: APP_PASSKEY,
+      },
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 20000,
+    });
 
-   const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: EMAIL_KEY,
-    pass: APP_PASSKEY,
-  },
-});
-
-    // Check SMTP connection
     await transporter.verify();
 
     console.log("SMTP connection successful");
 
     await transporter.sendMail({
       from: `"Nestro" <${EMAIL_KEY}>`,
-      to: normalizedEmail,
+      to: toemail,
       subject: "Nestro - Verify Your Email",
-
       html: `
         <div style="max-width:600px;margin:auto;font-family:Arial,sans-serif;padding:20px;border:1px solid #e5e5e5;border-radius:10px;">
-
           <h2 style="color:#8B5E3C;text-align:center;">
             Welcome to Nestro
           </h2>
@@ -76,7 +73,6 @@ export async function SendOtpMail(normalizedEmail, otp) {
           <p style="text-align:center;color:#777;font-size:12px;">
             © ${new Date().getFullYear()} Nestro. All Rights Reserved.
           </p>
-
         </div>
       `,
     });
