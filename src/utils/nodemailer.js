@@ -16,10 +16,13 @@ export async function SendOtpMail(toemail, otp) {
       host: "smtp.gmail.com",
       port: 465,
       secure: true,
+      family: 4,
+
       auth: {
         user: EMAIL_KEY,
         pass: APP_PASSKEY,
       },
+
       connectionTimeout: 40000,
       greetingTimeout: 40000,
       socketTimeout: 40000,
@@ -40,7 +43,8 @@ export async function SendOtpMail(toemail, otp) {
           </h2>
 
           <p>Hello,</p>
-          <p>Your One Time Password (OTP) is:</p>
+
+          <p>Your One Time Password (OTP) for verifying your account is:</p>
 
           <div style="text-align:center;margin:30px 0;">
             <span style="
@@ -59,6 +63,8 @@ export async function SendOtpMail(toemail, otp) {
 
           <p>This OTP is valid for <strong>10 minutes</strong>.</p>
 
+          <p>If you didn't request this verification, please ignore this email.</p>
+
           <hr>
 
           <p style="text-align:center;color:#777;font-size:12px;">
@@ -67,6 +73,8 @@ export async function SendOtpMail(toemail, otp) {
         </div>
       `,
     });
+
+    console.log("OTP email sent successfully");
 
     return "otp Email Sent Successfully";
 
