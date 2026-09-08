@@ -5,8 +5,11 @@ export async function SendOtpMail(toemail, otp) {
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
-      port:587,
-      secure:false,
+      port: 587,
+      secure: false,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
       auth: {
         user: process.env.EMAIL_KEY,
         pass: process.env.APP_PASSKEY,
