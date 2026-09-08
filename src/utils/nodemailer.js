@@ -15,17 +15,15 @@ export async function SendOtpMail(normalizedEmail, otp) {
     console.log("App Password exists:", !!APP_PASSKEY);
     console.log("Sending OTP to:", normalizedEmail);
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      family: 4,
-
-      auth: {
-        user: EMAIL_KEY,
-        pass: APP_PASSKEY,
-      },
-    });
+   const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: EMAIL_KEY,
+    pass: APP_PASSKEY,
+  },
+});
 
     // Check SMTP connection
     await transporter.verify();
