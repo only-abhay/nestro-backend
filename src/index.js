@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import ConnectDb from "./config/categoryDB.js";
 import cors from "cors";
 import express from "express";
@@ -14,8 +14,6 @@ import UserRouter from "./routers/user.router.js";
 import CartRouter from "./routers/cart.router.js";
 import OrderRouter from "./routers/order.router.js";
 import TransactionRouter from "./routers/transaction.router.js";
-
-dotenv.config();
 
 const app = express();
 

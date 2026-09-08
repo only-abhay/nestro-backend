@@ -16,6 +16,7 @@ import { generateToken } from "../utils/helper.js";
 const Register = async (req, res) => {
   try {
     const { name, email, password, number } = req.body;
+    console.log("Registering user with email:", email, "and name:", name);
 
     if (!name || !email || !password || !number) {
       return BadRequest(res, "All fields are required");
