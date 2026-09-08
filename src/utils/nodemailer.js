@@ -7,7 +7,7 @@ export async function SendOtpMail(normalizedEmail, otp) {
 
     if (!EMAIL_KEY || !APP_PASSKEY) {
       throw new Error(
-        "Email service is not configured. Set EMAIL_KEY and APP_PASSKEY in backend/.env."
+        "Email service is not configured. Set EMAIL_KEY and APP_PASSKEY."
       );
     }
 
@@ -16,14 +16,18 @@ export async function SendOtpMail(normalizedEmail, otp) {
     console.log("Sending OTP to:", normalizedEmail);
 
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      family: 4,
+
       auth: {
         user: EMAIL_KEY,
         pass: APP_PASSKEY,
       },
     });
 
-    // Check Gmail SMTP connection
+    // Check SMTP connection
     await transporter.verify();
 
     console.log("SMTP connection successful");
@@ -32,9 +36,10 @@ export async function SendOtpMail(normalizedEmail, otp) {
       from: `"Nestro" <${EMAIL_KEY}>`,
       to: normalizedEmail,
       subject: "Nestro - Verify Your Email",
+
       html: `
         <div style="max-width:600px;margin:auto;font-family:Arial,sans-serif;padding:20px;border:1px solid #e5e5e5;border-radius:10px;">
-          
+
           <h2 style="color:#8B5E3C;text-align:center;">
             Welcome to Nestro
           </h2>
