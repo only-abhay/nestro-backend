@@ -1,32 +1,49 @@
+import "dotenv/config";
 import nodemailer from "nodemailer";
 
-export async function SendOtpMail(toemail, otp) {
-  console.log("Sending OTP to:", toemail, "OTP:", otp);
+export async function SendOtpMail(normalizedEmail, otp) {
   try {
+    const { EMAIL_KEY, APP_PASSKEY } = process.env;
+
+    if (!EMAIL_KEY || !APP_PASSKEY) {
+      throw new Error(
+        "Email service is not configured. Set EMAIL_KEY and APP_PASSKEY in backend/.env."
+      );
+    }
+
+    console.log("Email:", EMAIL_KEY);
+    console.log("App Password exists:", !!APP_PASSKEY);
+    console.log("Sending OTP to:", normalizedEmail);
+
     const transporter = nodemailer.createTransport({
       service: "gmail",
-      port: 587,
-      secure: false,
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
       auth: {
-        user: process.env.EMAIL_KEY,
-        pass: process.env.APP_PASSKEY,
+        user: EMAIL_KEY,
+        pass: APP_PASSKEY,
       },
     });
 
+    // Check Gmail SMTP connection
+    await transporter.verify();
+
+    console.log("SMTP connection successful");
+
     await transporter.sendMail({
-      from: `"Nestro" <${process.env.EMAIL_KEY}>`,
-      to: toemail,
+      from: `"Nestro" <${EMAIL_KEY}>`,
+      to: normalizedEmail,
       subject: "Nestro - Verify Your Email",
       html: `
         <div style="max-width:600px;margin:auto;font-family:Arial,sans-serif;padding:20px;border:1px solid #e5e5e5;border-radius:10px;">
-          <h2 style="color:#8B5E3C;text-align:center;">Welcome to Nestro</h2>
+          
+          <h2 style="color:#8B5E3C;text-align:center;">
+            Welcome to Nestro
+          </h2>
 
           <p>Hello,</p>
 
-          <p>Your One Time Password (OTP) for verifying your account is:</p>
+          <p>
+            Your One Time Password (OTP) for verifying your account is:
+          </p>
 
           <div style="text-align:center;margin:30px 0;">
             <span style="
@@ -43,23 +60,36 @@ export async function SendOtpMail(toemail, otp) {
             </span>
           </div>
 
-          <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+          <p>
+            This OTP is valid for <strong>10 minutes</strong>.
+          </p>
 
-          <p>If you didn't request this verification, please ignore this email.</p>
+          <p>
+            If you didn't request this verification, please ignore this email.
+          </p>
 
           <hr>
 
           <p style="text-align:center;color:#777;font-size:12px;">
             © ${new Date().getFullYear()} Nestro. All Rights Reserved.
           </p>
+
         </div>
       `,
     });
 
+    console.log("OTP email sent successfully");
 
-    return true;
+    return "otp Email Sent Successfully";
+
   } catch (error) {
-    console.log("Email Error:", error);
+    console.error("Email Error:", {
+      message: error.message,
+      code: error.code,
+      responseCode: error.responseCode,
+      command: error.command,
+    });
+
     return false;
   }
 }
