@@ -1,89 +1,69 @@
 import "dotenv/config";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-export async function SendOtpMail(toemail, otp) {
+import nodemailer from "nodemailer";
+import dns from "dns";
+ 
+// Force IPv4 resolution - fixes ENETUNREACH error on Render
+dns.setDefaultResultOrder("ipv4first");
+ 
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // true for port 465 (SSL)
+  auth: {
+    user: process.env.EMAIL_KEY,
+    pass: process.env.APP_PASSKEY,
+  },
+});
+ 
+export async function SendOtpMail(normalizedEmail, otp) {
   try {
-    if (!process.env.RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY is missing");
+    if (!process.env.EMAIL_KEY || !process.env.APP_PASSKEY) {
+      console.error("EMAIL_KEY or APP_PASSKEY is missing");
+      return false;
     }
-
-    console.log("Sending OTP to:", toemail);
-
-    const { data, error } = await resend.emails.send({
-      from: "Nestro <onboarding@resend.dev>",
-      to: [toemail],
+    if (!normalizedEmail || !otp) {
+      console.error("Email or OTP is missing");
+      return false;
+    }
+    console.log("Sending OTP to:", normalizedEmail);
+    const info = await transporter.sendMail({
+      from: `"Nestro" <${process.env.EMAIL_KEY}>`,
+      to: normalizedEmail,
       subject: "Nestro - Verify Your Email",
-
       html: `
         <div style="
-          max-width:600px;
-          margin:auto;
-          font-family:Arial,sans-serif;
-          padding:20px;
-          border:1px solid #e5e5e5;
-          border-radius:10px;
+          max-width: 500px;
+          margin: auto;
+          padding: 30px;
+          font-family: Arial, sans-serif;
+          border: 1px solid #ddd;
+          border-radius: 10px;
         ">
-
-          <h2 style="color:#8B5E3C;text-align:center;">
-            Welcome to Nestro
-          </h2>
-
+          <h2 style="text-align:center;">Nestro</h2>
           <p>Hello,</p>
-
-          <p>
-            Your One Time Password (OTP) for verifying your account is:
-          </p>
-
-          <div style="text-align:center;margin:30px 0;">
-            <span style="
-              display:inline-block;
-              background:#8B5E3C;
-              color:#fff;
-              padding:15px 30px;
-              font-size:28px;
-              font-weight:bold;
-              letter-spacing:8px;
-              border-radius:8px;
-            ">
-              ${otp}
-            </span>
-          </div>
-
-          <p>
-            This OTP is valid for <strong>10 minutes</strong>.
-          </p>
-
-          <p>
-            If you didn't request this verification, please ignore this email.
-          </p>
-
-          <hr>
-
-          <p style="
+          <p>Your OTP for email verification is:</p>
+          <h1 style="
             text-align:center;
-            color:#777;
-            font-size:12px;
+            letter-spacing: 8px;
+            margin: 25px 0;
           ">
-            © ${new Date().getFullYear()} Nestro. All Rights Reserved.
-          </p>
-
+            ${otp}
+          </h1>
+          <p>This OTP will expire in <strong>10 minutes</strong>.</p>
+          <p>If you did not request this OTP, you can safely ignore this email.</p>
+          <p>Regards,<br/>Nestro Team</p>
         </div>
       `,
     });
-
-    if (error) {
-      console.error("Resend Error:", error);
-      return false;
-    }
-
-    console.log("OTP email sent successfully:", data);
-
-    return "otp Email Sent Successfully";
-
+    console.log("OTP email sent successfully:", info.messageId);
+    return true;
   } catch (error) {
-    console.error("Email Error:", error);
+    console.error("Email Error:", {
+      message: error.message,
+      code: error.code,
+      responseCode: error.responseCode,
+      command: error.command,
+    });
     return false;
   }
 }
