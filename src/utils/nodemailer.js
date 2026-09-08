@@ -1,28 +1,28 @@
 import "dotenv/config";
 import nodemailer from "nodemailer";
+import dns from "dns";
+
+dns.setDefaultResultOrder("ipv4first");
 
 export async function SendOtpMail(toemail, otp) {
   try {
     const { EMAIL_KEY, APP_PASSKEY } = process.env;
 
     if (!EMAIL_KEY || !APP_PASSKEY) {
-      throw new Error(
-        "Email service is not configured. Set EMAIL_KEY and APP_PASSKEY."
-      );
+      throw new Error("EMAIL_KEY or APP_PASSKEY missing");
     }
 
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
       secure: true,
-      family: 4,
       auth: {
         user: EMAIL_KEY,
         pass: APP_PASSKEY,
       },
-      connectionTimeout: 20000,
-      greetingTimeout: 20000,
-      socketTimeout: 20000,
+      connectionTimeout: 40000,
+      greetingTimeout: 40000,
+      socketTimeout: 40000,
     });
 
     await transporter.verify();
@@ -40,10 +40,7 @@ export async function SendOtpMail(toemail, otp) {
           </h2>
 
           <p>Hello,</p>
-
-          <p>
-            Your One Time Password (OTP) for verifying your account is:
-          </p>
+          <p>Your One Time Password (OTP) is:</p>
 
           <div style="text-align:center;margin:30px 0;">
             <span style="
@@ -60,13 +57,7 @@ export async function SendOtpMail(toemail, otp) {
             </span>
           </div>
 
-          <p>
-            This OTP is valid for <strong>10 minutes</strong>.
-          </p>
-
-          <p>
-            If you didn't request this verification, please ignore this email.
-          </p>
+          <p>This OTP is valid for <strong>10 minutes</strong>.</p>
 
           <hr>
 
@@ -76,8 +67,6 @@ export async function SendOtpMail(toemail, otp) {
         </div>
       `,
     });
-
-    console.log("OTP email sent successfully");
 
     return "otp Email Sent Successfully";
 
