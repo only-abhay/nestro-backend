@@ -53,7 +53,7 @@ export async function SendOtpMail(toemail, otp) {
     });
 
 
-    return "otp Email Sent Successfully";
+    return true;
   } catch (error) {
     console.log("Email Error:", error);
     return false;

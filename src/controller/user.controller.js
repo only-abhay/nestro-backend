@@ -21,31 +21,44 @@ const Register = async (req, res) => {
       return BadRequest(res, "All fields are required");
     }
 
-    const user = await UserModel.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await UserModel.findOne({ email: normalizedEmail });
 
-    if (user) {
+    if (user?.isVerified) {
       return AlreadyExist(res, "Email already exists");
     }
 
     const encryptedPass = cryptr.encrypt(password);
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpire = Date.now() + 3 * 60 * 1000;
+    const otpExpire = Date.now() + 10 * 60 * 1000;
 
-    const mailSent = await SendOtpMail(email, otp);
+    const mailSent = await SendOtpMail(normalizedEmail, otp);
 
     if (!mailSent) {
-      return InternalServerError(res, "OTP mail not sent");
+      return InternalServerError(
+        res,
+        "We could not send the OTP email. Please check the email service configuration and try again."
+      );
     }
 
-    await UserModel.create({
-      name,
-      email,
-      password: encryptedPass,
-      number,
-      otp,
-      otpExpire,
-    });
+    if (user) {
+      user.name = name;
+      user.password = encryptedPass;
+      user.number = number;
+      user.otp = otp;
+      user.otpExpire = otpExpire;
+      await user.save();
+    } else {
+      await UserModel.create({
+        name,
+        email: normalizedEmail,
+        password: encryptedPass,
+        number,
+        otp,
+        otpExpire,
+      });
+    }
 
     return Created(res, "Registration successful. Please verify OTP.");
   } catch (error) {
@@ -336,7 +349,37 @@ const AddAddress = async (req, res) => {
 
 const ResendOTP = async (req, res) => {
   try {
-    return Created(res, "Data Created");
+    const email = req.body?.email?.trim().toLowerCase();
+
+    if (!email) {
+      return BadRequest(res, "Email is required");
+    }
+
+    const user = await UserModel.findOne({ email });
+
+    if (!user) {
+      return NotFound(res, "User not found");
+    }
+
+    if (user.isVerified) {
+      return BadRequest(res, "Email is already verified");
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const mailSent = await SendOtpMail(email, otp);
+
+    if (!mailSent) {
+      return InternalServerError(
+        res,
+        "We could not send the OTP email. Please try again later."
+      );
+    }
+
+    user.otp = otp;
+    user.otpExpire = Date.now() + 10 * 60 * 1000;
+    await user.save();
+
+    return Created(res, "OTP resent successfully");
   } catch (error) {
     return InternalServerError(res, "internal Server Error", error);
   }
