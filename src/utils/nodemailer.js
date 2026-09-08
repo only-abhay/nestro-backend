@@ -13,6 +13,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_KEY,
     pass: process.env.APP_PASSKEY,
   },
+  family: 4, // force IPv4 - Render's network can't reach Gmail's IPv6 address
 });
  
 export async function SendOtpMail(normalizedEmail, otp) {
@@ -65,5 +66,4 @@ export async function SendOtpMail(normalizedEmail, otp) {
       command: error.command,
     });
     return false;
-  }
-}
+  }}
