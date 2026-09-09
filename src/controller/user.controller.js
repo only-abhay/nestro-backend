@@ -16,7 +16,6 @@ import { generateToken } from "../utils/helper.js";
 const Register = async (req, res) => {
   try {
     const { name, email, password, number } = req.body;
-    console.log("Register Request Body:", req.body);
 
     if (!name || !email || !password || !number) {
       return BadRequest(res, "All fields are required");
@@ -63,7 +62,6 @@ const Register = async (req, res) => {
 
     return Created(res, "Registration successful. Please verify OTP.");
   } catch (error) {
-    console.error("Registration Error:", error);
     return InternalServerError(res, "Internal Server Error", error);
   }
 };
