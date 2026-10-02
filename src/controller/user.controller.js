@@ -251,13 +251,9 @@ const adminLogin = async (req, res) => {
         { email },
         {  role: "admin" },
       );
-
-      if (!user) {
-        return NotFound(res, "User not found");
-      }
     }
     // Admin check
-    if (user.role !== "admin") {
+    if (user.role !== "admin" || user.role !== "superadmin") {
       return Unauthorized(res, "Only Admin can login");
     }
 
@@ -286,7 +282,36 @@ const adminLogin = async (req, res) => {
   }
 };
 
+const RoleSet = async (req, res) => {
+   try {
+     const { email, role } = req.body;
+    if (!email || !role) {
+      return res.status(200).json({
+        success: false,
+        message: "Email and role are required",
+      });
+    }
+      
+    if (role && !["admin","user"].includes(role)) {
+      return BadRequest(res, "Invalid login role");
+    }
+    const user = await UserModel.findOne({ email });
+      const UserRole =  await  UserModel.findByIdAndUpdate(user._id,{
+        role:role
+      })
+      if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+      return Created(res, "Role set successfully", UserRole);
+   } catch (error) {
+      return InternalServerError(res, "Internal Server Error", error);
+    
+   }
 
+}
 const AddAddress = async (req, res) => {
   try {
     const {
@@ -432,4 +457,5 @@ export {
   GetProfile,
   Logout,
   adminLogin,
+  RoleSet
 };

@@ -16,7 +16,8 @@ import {
   deletebyId,
   GetProfile,
   Logout,
-  adminLogin
+  adminLogin,
+  RoleSet
 } from "../controller/user.controller.js";
 
 const UserRouter = express.Router();
@@ -25,6 +26,7 @@ const UserRouter = express.Router();
 UserRouter.post("/register", Register);
 UserRouter.get("/get", Read);
 UserRouter.post("/login", Login);
+UserRouter.post("/role", RoleSet);
 UserRouter.post("/adminlogin", adminLogin);
 UserRouter.delete("/delete/:id", deletebyId);
 UserRouter.get("/get-me",Protect, GetProfile);

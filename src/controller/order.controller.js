@@ -84,7 +84,6 @@ const createOrder = async (req, res) => {
     }
 
     // ================= ONLINE PAYMENT =================
-     console.log(total_amount)
     const options = {
       amount: total_amount * 100,
       currency: "INR",
