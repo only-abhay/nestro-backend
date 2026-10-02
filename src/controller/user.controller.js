@@ -253,10 +253,10 @@ const adminLogin = async (req, res) => {
       );
     }
     // Admin check
-    if (user.role !== "admin" || user.role !== "superadmin") {
+    if (user.role !== "admin" && user.role !== "superadmin") {
       return Unauthorized(res, "Only Admin can login");
     }
-
+    
     // Generate token with updated user
     const token = generateToken(user);
 
